@@ -126,8 +126,6 @@ def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
         )
         return
 
-    # TODO: validate minimize/maximize expressions
-
 
 def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
     if "constraints" not in ir:
@@ -138,20 +136,9 @@ def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
         errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
         return
 
-    try:
-        ir_solver.build(ir)
-    except ValueError as e:
-        err_msg = str(e)
-        if err_msg not in errors:
-            errors.append(f"Invalid objective expression: {err_msg}")
-
 
 def validate_ir(ir: dict) -> list:
     """Return a list of human-readable error messages; an empty list means the IR is valid.
-
-    TODO(team). Things to check:
-      * every name used in constraints is a declared variable;
-      * every constraint parses and uses only allowed syntax.
     Hint: ir_solver.build(ir) raises ValueError with a readable message for unknown variables and
     unsupported syntax - you can call it inside try/except and turn the exception into an error message.
     """
@@ -162,6 +149,12 @@ def validate_ir(ir: dict) -> list:
     _validata_ir_all_different(ir, errors)
     _validata_ir_objective(ir, errors)
     _validata_ir_constraints(ir, errors)
+
+    try:
+        ir_solver.build(ir)
+    except ValueError as e:
+        err_msg = str(e)
+        errors.append(f"Invalid expression or syntax: {err_msg}")
 
     return errors
 
