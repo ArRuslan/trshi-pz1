@@ -12,6 +12,7 @@ Suggested order of work:
 
 See docs/ir.md for the IR format.
 """
+import ast
 import json
 from typing import Any, Optional
 
@@ -75,7 +76,7 @@ def validate_ir(ir: dict) -> list:
     """Return a list of human-readable error messages; an empty list means the IR is valid.
 
     TODO(team). Things to check:
-      * every name used in all_different / constraints / objective is a declared variable;
+      * every name used in constraints is a declared variable;
       * every constraint parses and uses only allowed syntax.
     Hint: ir_solver.build(ir) raises ValueError with a readable message for unknown variables and
     unsupported syntax - you can call it inside try/except and turn the exception into an error message.
@@ -123,8 +124,14 @@ def validate_ir(ir: dict) -> list:
                 "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
             )
 
+        # TODO: validate minimize/maximize expressions
 
-    # TODO: constraints?
+    if "constraints" in ir:
+        constraints = ir["constraints"]
+        if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
+            errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
+        else:
+            ...  # TODO: validate constraints expressions
 
     return errors
 
