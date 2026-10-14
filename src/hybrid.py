@@ -12,6 +12,7 @@ Suggested order of work:
 
 See docs/ir.md for the IR format.
 """
+import ast
 import json
 from typing import Any, Optional
 
@@ -71,37 +72,106 @@ def formalize(problem: dict, feedback: Optional[str] = None) -> dict:
     return parsed.model_dump(exclude_none=True)
 
 
+def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
+    if "variables" not in ir:
+        errors.append("IR must contain \"variables\" field")
+        return
+
+    for var_name, domain_or_values in ir["variables"].items():
+        if isinstance(domain_or_values, list):
+            if len(domain_or_values) != 2 \
+                    or not isinstance(domain_or_values[0], int) \
+                    or not isinstance(domain_or_values[1], int):
+                errors.append(
+                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f"must be an array of two numbers in format [low, high]"
+                )
+        elif isinstance(domain_or_values, dict):
+            if "values" not in domain_or_values \
+                    or not all(isinstance(value, int) for value in domain_or_values["values"]):
+                errors.append(
+                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f"must be an object in format {{\"values\": [v1, v2, ...]}}"
+                )
+        else:
+            errors.append(f"Variable \"{var_name}\" has invalid domain: {domain_or_values}")
+
+
+def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
+    if "all_different" not in ir:
+        return
+
+    all_diff = ir["all_different"]
+    if not isinstance(all_diff, list):
+        errors.append(f"\"all_different\" must be an array in format [[\"var1\", \"var2\"], ...]")
+        return
+
+    for var_names in all_diff:
+        if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
+            errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
+        for var_name in var_names:
+            if var_name not in ir["variables"]:
+                errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
+
+
+def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
+    if "objective" not in ir:
+        return
+
+    obj = ir["objective"]
+    if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
+        errors.append(
+            "\"objective\" must be an object "
+            "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
+        )
+        return
+
+    expr = obj["maximize"] if "maximize" in obj else obj["minimize"]
+
+    conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
+
+    try:
+        conv(ast.parse(expr, mode="eval"))
+    except SyntaxError as e:
+        errors.append(f"Error in objective: {e}")
+
+
+def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
+    if "constraints" not in ir:
+        return
+
+    constraints = ir["constraints"]
+    if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
+        errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
+        return
+
+    conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
+
+    for constraint in constraints:
+        try:
+            conv(ast.parse(constraint, mode="eval"))
+        except SyntaxError as e:
+            errors.append(f"Error in constraint \"{constraint}\": {e}")
+
+
 def validate_ir(ir: dict) -> list:
     """Return a list of human-readable error messages; an empty list means the IR is valid.
-
-    TODO(team). Things to check:
-      * every name used in all_different / constraints / objective is a declared variable;
-      * every constraint parses and uses only allowed syntax.
     Hint: ir_solver.build(ir) raises ValueError with a readable message for unknown variables and
     unsupported syntax - you can call it inside try/except and turn the exception into an error message.
     """
 
     errors = []
 
-    if "variables" not in ir:
-        errors.append("IR must contain \"variables\" field")
-    else:
-        for var_name, domain_or_values in ir["variables"].items():
-            if isinstance(domain_or_values, list):
-                if len(domain_or_values) != 2 \
-                        or not isinstance(domain_or_values[0], int) \
-                        or not isinstance(domain_or_values[1], int):
-                    errors.append(
-                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
-                        f"must be an array in format [lo, hi]"
-                    )
-            elif isinstance(domain_or_values, dict):
-                if "values" not in domain_or_values \
-                        or not all(isinstance(value, int) for value in domain_or_values["values"]):
-                    errors.append(
-                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
-                        f"must be an object in format {{\"values\": [v1, v2, ...]}}"
-                    )
+    _validata_ir_variables(ir, errors)
+    _validata_ir_all_different(ir, errors)
+    _validata_ir_objective(ir, errors)
+    _validata_ir_constraints(ir, errors)
+
+    try:
+        ir_solver.build(ir)
+    except (ValueError, SyntaxError) as e:
+        err_msg = str(e)
+        errors.append(f"Invalid expression or syntax: {err_msg}")
 
     return errors
 
@@ -156,8 +226,10 @@ def solve(problem: dict) -> dict:
     errors = validate_ir(ir)
     trace["attempts"].append({"ir": ir, "errors": errors})
 
-    # TODO(team): record it in trace?
-    ir = formalize(problem, feedback="\n".join(errors))
+    if errors:
+        ir = formalize(problem, feedback="\n".join(errors))
+        new_errors = validate_ir(ir)
+        trace["attempts"].append({"ir": ir, "errors": new_errors})
 
     try:
         result = run_solver(ir)
