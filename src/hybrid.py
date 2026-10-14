@@ -126,6 +126,15 @@ def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
         )
         return
 
+    expr = obj["maximize"] if "maximize" in obj else obj["mininize"]
+
+    conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
+
+    try:
+        conv(ast.parse(expr, mode="eval"))
+    except SyntaxError as e:
+        errors.append(f"Error in objective: {e}")
+
 
 def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
     if "constraints" not in ir:
@@ -135,6 +144,14 @@ def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
     if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
         errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
         return
+
+    conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
+
+    for constraint in constraints:
+        try:
+            conv(ast.parse(constraint, mode="eval"))
+        except SyntaxError as e:
+            errors.append(f"Error in constraint \"{constraint}\": {e}")
 
 
 def validate_ir(ir: dict) -> list:
