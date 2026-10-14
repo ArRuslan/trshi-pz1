@@ -86,15 +86,19 @@ def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
                     f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
                     f"must be an array of two numbers in format [low, high]"
                 )
+                continue
+            lo, hi = domain_or_values
+            if lo > hi:
+                errors.append(f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, lo must be less than hi")
         elif isinstance(domain_or_values, dict):
             if "values" not in domain_or_values \
                     or not all(isinstance(value, int) for value in domain_or_values["values"]):
                 errors.append(
-                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f"Variable \"{var_name}\" has invalid values: {domain_or_values}, "
                     f"must be an object in format {{\"values\": [v1, v2, ...]}}"
                 )
         else:
-            errors.append(f"Variable \"{var_name}\" has invalid domain: {domain_or_values}")
+            errors.append(f"Variable \"{var_name}\" has invalid domain or values: {domain_or_values}")
 
 
 def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
@@ -109,6 +113,7 @@ def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
     for var_names in all_diff:
         if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
             errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
+            continue
         for var_name in var_names:
             if var_name not in ir["variables"]:
                 errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
@@ -132,7 +137,7 @@ def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
 
     try:
         conv(ast.parse(expr, mode="eval"))
-    except SyntaxError as e:
+    except (ValueError, SyntaxError) as e:
         errors.append(f"Error in objective: {e}")
 
 
@@ -150,7 +155,7 @@ def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
     for constraint in constraints:
         try:
             conv(ast.parse(constraint, mode="eval"))
-        except (SyntaxError, ValueError) as e:
+        except (ValueError, SyntaxError) as e:
             errors.append(f"Error in constraint \"{constraint}\": {e}")
 
 
