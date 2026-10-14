@@ -84,7 +84,7 @@ def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
                     or not isinstance(domain_or_values[1], int):
                 errors.append(
                     f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
-                    f"must be an array in format [lo, hi]"
+                    f"must be an array of two numbers in format [low, high]"
                 )
         elif isinstance(domain_or_values, dict):
             if "values" not in domain_or_values \
@@ -169,7 +169,7 @@ def validate_ir(ir: dict) -> list:
 
     try:
         ir_solver.build(ir)
-    except ValueError as e:
+    except (ValueError, SyntaxError) as e:
         err_msg = str(e)
         errors.append(f"Invalid expression or syntax: {err_msg}")
 
