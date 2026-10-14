@@ -126,7 +126,7 @@ def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
         )
         return
 
-    expr = obj["maximize"] if "maximize" in obj else obj["mininize"]
+    expr = obj["maximize"] if "maximize" in obj else obj["minimize"]
 
     conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
 
