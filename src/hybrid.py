@@ -72,6 +72,75 @@ def formalize(problem: dict, feedback: Optional[str] = None) -> dict:
     return parsed.model_dump(exclude_none=True)
 
 
+def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
+    if "variables" not in ir:
+        errors.append("IR must contain \"variables\" field")
+        return
+
+    for var_name, domain_or_values in ir["variables"].items():
+        if isinstance(domain_or_values, list):
+            if len(domain_or_values) != 2 \
+                    or not isinstance(domain_or_values[0], int) \
+                    or not isinstance(domain_or_values[1], int):
+                errors.append(
+                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f"must be an array in format [lo, hi]"
+                )
+        elif isinstance(domain_or_values, dict):
+            if "values" not in domain_or_values \
+                    or not all(isinstance(value, int) for value in domain_or_values["values"]):
+                errors.append(
+                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f"must be an object in format {{\"values\": [v1, v2, ...]}}"
+                )
+        else:
+            errors.append(f"Variable \"{var_name}\" has invalid domain: {domain_or_values}")
+
+
+def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
+    if "all_different" not in ir:
+        return
+
+    all_diff = ir["all_different"]
+    if not isinstance(all_diff, list):
+        errors.append(f"\"all_different\" must be an array in format [[\"var1\", \"var2\"], ...]")
+        return
+
+    for var_names in all_diff:
+        if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
+            errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
+        for var_name in var_names:
+            if var_name not in ir["variables"]:
+                errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
+
+
+def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
+    if "objective" not in ir:
+        return
+
+    obj = ir["objective"]
+    if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
+        errors.append(
+            "\"objective\" must be an object "
+            "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
+        )
+        return
+
+    # TODO: validate minimize/maximize expressions
+
+
+def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
+    if "constraints" not in ir:
+        return
+
+    constraints = ir["constraints"]
+    if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
+        errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
+        return
+
+    ...  # TODO: validate constraints expressions
+
+
 def validate_ir(ir: dict) -> list:
     """Return a list of human-readable error messages; an empty list means the IR is valid.
 
@@ -84,54 +153,10 @@ def validate_ir(ir: dict) -> list:
 
     errors = []
 
-    if "variables" not in ir:
-        errors.append("IR must contain \"variables\" field")
-    else:
-        for var_name, domain_or_values in ir["variables"].items():
-            if isinstance(domain_or_values, list):
-                if len(domain_or_values) != 2 \
-                        or not isinstance(domain_or_values[0], int) \
-                        or not isinstance(domain_or_values[1], int):
-                    errors.append(
-                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
-                        f"must be an array in format [lo, hi]"
-                    )
-            elif isinstance(domain_or_values, dict):
-                if "values" not in domain_or_values \
-                        or not all(isinstance(value, int) for value in domain_or_values["values"]):
-                    errors.append(
-                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
-                        f"must be an object in format {{\"values\": [v1, v2, ...]}}"
-                    )
-
-    if "all_different" in ir:
-        all_diff = ir["all_different"]
-        if not isinstance(all_diff, list):
-            errors.append(f"\"all_different\" must be an array in format [[\"var1\", \"var2\"], ...]")
-        else:
-            for var_names in all_diff:
-                if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
-                    errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
-                for var_name in var_names:
-                    if var_name not in ir["variables"]:
-                        errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
-
-    if "objective" in ir:
-        obj = ir["objective"]
-        if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
-            errors.append(
-                "\"objective\" must be an object "
-                "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
-            )
-
-        # TODO: validate minimize/maximize expressions
-
-    if "constraints" in ir:
-        constraints = ir["constraints"]
-        if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
-            errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
-        else:
-            ...  # TODO: validate constraints expressions
+    _validata_ir_variables(ir, errors)
+    _validata_ir_all_different(ir, errors)
+    _validata_ir_objective(ir, errors)
+    _validata_ir_constraints(ir, errors)
 
     return errors
 
