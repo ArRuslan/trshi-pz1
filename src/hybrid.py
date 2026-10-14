@@ -75,13 +75,35 @@ def validate_ir(ir: dict) -> list:
     """Return a list of human-readable error messages; an empty list means the IR is valid.
 
     TODO(team). Things to check:
-      * every domain is [lo, hi] with lo <= hi, or {"values": [...]} with integers;
       * every name used in all_different / constraints / objective is a declared variable;
       * every constraint parses and uses only allowed syntax.
     Hint: ir_solver.build(ir) raises ValueError with a readable message for unknown variables and
     unsupported syntax - you can call it inside try/except and turn the exception into an error message.
     """
-    return []
+
+    errors = []
+
+    if "variables" not in ir:
+        errors.append("IR must contain \"variables\" field")
+    else:
+        for var_name, domain_or_values in ir["variables"].items():
+            if isinstance(domain_or_values, list):
+                if len(domain_or_values) != 2 \
+                        or not isinstance(domain_or_values[0], int) \
+                        or not isinstance(domain_or_values[1], int):
+                    errors.append(
+                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                        f"must be an array in format [lo, hi]"
+                    )
+            elif isinstance(domain_or_values, dict):
+                if "values" not in domain_or_values \
+                        or not all(isinstance(value, int) for value in domain_or_values["values"]):
+                    errors.append(
+                        f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                        f"must be an object in format {{\"values\": [v1, v2, ...]}}"
+                    )
+
+    return errors
 
 
 def run_solver(ir: dict) -> dict:
@@ -90,7 +112,8 @@ def run_solver(ir: dict) -> dict:
     TODO(team): with limit=1 the solver stops after the first solution, so it reports "unique" even when
     several solutions exist. Think about what limit you need to tell "unique" from "multiple".
     """
-    return ir_solver.solve(ir, limit=1)
+    result = ir_solver.solve(ir, limit=1)
+    return result
 
 
 PRESENT_PROMPT = """A puzzle has been solved by a constraint solver. Rewrite the solver's result in the required
@@ -133,10 +156,8 @@ def solve(problem: dict) -> dict:
     errors = validate_ir(ir)
     trace["attempts"].append({"ir": ir, "errors": errors})
 
-    # TODO(team): if `errors` is not empty, make ONE more attempt:
-    #   ir = formalize(problem, feedback="\n".join(errors)); errors = validate_ir(ir); record it in trace.
-    if errors:
-        raise HybridError("invalid IR: " + "; ".join(errors))
+    # TODO(team): record it in trace?
+    ir = formalize(problem, feedback="\n".join(errors))
 
     try:
         result = run_solver(ir)
