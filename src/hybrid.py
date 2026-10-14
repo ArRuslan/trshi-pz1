@@ -138,7 +138,12 @@ def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
         errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
         return
 
-    ...  # TODO: validate constraints expressions
+    try:
+        ir_solver.build(ir)
+    except ValueError as e:
+        err_msg = str(e)
+        if err_msg not in errors:
+            errors.append(f"Invalid objective expression: {err_msg}")
 
 
 def validate_ir(ir: dict) -> list:
