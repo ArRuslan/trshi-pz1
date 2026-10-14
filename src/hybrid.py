@@ -103,6 +103,29 @@ def validate_ir(ir: dict) -> list:
                         f"must be an object in format {{\"values\": [v1, v2, ...]}}"
                     )
 
+    if "all_different" in ir:
+        all_diff = ir["all_different"]
+        if not isinstance(all_diff, list):
+            errors.append(f"\"all_different\" must be an array in format [[\"var1\", \"var2\"], ...]")
+        else:
+            for var_names in all_diff:
+                if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
+                    errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
+                for var_name in var_names:
+                    if var_name not in ir["variables"]:
+                        errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
+
+    if "objective" in ir:
+        obj = ir["objective"]
+        if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
+            errors.append(
+                "\"objective\" must be an object "
+                "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
+            )
+
+
+    # TODO: constraints?
+
     return errors
 
 
@@ -156,8 +179,10 @@ def solve(problem: dict) -> dict:
     errors = validate_ir(ir)
     trace["attempts"].append({"ir": ir, "errors": errors})
 
-    # TODO(team): record it in trace?
-    ir = formalize(problem, feedback="\n".join(errors))
+    if errors:
+        ir = formalize(problem, feedback="\n".join(errors))
+        new_errors = validate_ir(ir)
+        trace["attempts"].append({"ir": ir, "errors": new_errors})
 
     try:
         result = run_solver(ir)
