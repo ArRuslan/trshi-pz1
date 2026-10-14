@@ -150,7 +150,7 @@ def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
     for constraint in constraints:
         try:
             conv(ast.parse(constraint, mode="eval"))
-        except SyntaxError as e:
+        except (SyntaxError, ValueError) as e:
             errors.append(f"Error in constraint \"{constraint}\": {e}")
 
 
