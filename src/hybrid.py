@@ -112,7 +112,7 @@ def run_solver(ir: dict) -> dict:
     TODO(team): with limit=1 the solver stops after the first solution, so it reports "unique" even when
     several solutions exist. Think about what limit you need to tell "unique" from "multiple".
     """
-    result = ir_solver.solve(ir, limit=1)
+    result = ir_solver.solve(ir, limit=2)
     return result
 
 
