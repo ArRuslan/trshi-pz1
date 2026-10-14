@@ -235,6 +235,8 @@ def solve(problem: dict) -> dict:
         ir = formalize(problem, feedback="\n".join(errors))
         new_errors = validate_ir(ir)
         trace["attempts"].append({"ir": ir, "errors": new_errors})
+        if new_errors:
+            raise HybridError("invalid IR after retry: " + "; ".join(new_errors))
 
     try:
         result = run_solver(ir)
