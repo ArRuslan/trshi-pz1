@@ -56,6 +56,17 @@ SYSTEM = "You translate logic puzzles into a formal constraint representation. Y
 #   * a worked example (few-shot) on a puzzle that is NOT in your set;
 #   * how to encode knights and knaves: a statement S by person X becomes  X == (S).
 FORMALIZER_PROMPT = """Translate the puzzle below into the IR format. Do not solve the puzzle.
+Important rules:
+- Do NOT use Python lists [], tuples (), or quotes inside constraints. Use only raw variable names, integers, and operators.
+- "all_different": Use ONLY when the puzzle explicitly requires values to be distinct. Otherwise, set "all_different": [].
+- Boolean / Truth logic:
+  * For truth values, binary roles, or conditions, use variables with domain [0, 1] (1 = true, 0 = false).
+  * If a variable X asserts or is equivalent to a condition S, encode it strictly as: X == (S).
+  * Examples:
+    - If X says "Y is a knight": X == (Y == 1)
+    - If X says "Y is a knave": X == (Y == 0)
+    - If X says "at least one of Y, Z is a knave": X == (Y == 0 or Z == 0)
+  * STRICT: Never use arithmetic operators (+, -, *) for logic. Use ONLY "or", "and", "not".
 
 {ir_spec}
 
@@ -107,16 +118,38 @@ def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
 
     all_diff = ir["all_different"]
     if not isinstance(all_diff, list):
-        errors.append(f"\"all_different\" must be an array in format [[\"var1\", \"var2\"], ...]")
+        errors.append('"all_different" must be an array in format [["var1", "var2"], ...]')
         return
 
+    valid_groups = []
     for var_names in all_diff:
-        if not isinstance(var_names, list) or not all(isinstance(var_name, str) for var_name in var_names):
-            errors.append(f"\"all_different\" must be a list in format [[\"var1\", \"var2\"], ...]")
+        if not isinstance(var_names, list) or not all(isinstance(v, str) for v in var_names):
+            errors.append('"all_different" must be a list in format [["var1", "var2"], ...]')
             continue
+
+        has_unknown = False
         for var_name in var_names:
             if var_name not in ir["variables"]:
-                errors.append(f"in \"all_different\": unknown variable \"{var_name}\"")
+                errors.append(f'in "all_different": unknown variable "{var_name}"')
+                has_unknown = True
+        
+        if has_unknown:
+            continue
+
+        possible_values = set()
+        for var_name in var_names:
+            dom = ir["variables"][var_name]
+            if isinstance(dom, list) and len(dom) == 2:
+                possible_values.update(range(dom[0], dom[1] + 1))
+            elif isinstance(dom, dict) and "values" in dom:
+                possible_values.update(dom["values"])
+
+        if len(var_names) > len(possible_values):
+            continue
+
+        valid_groups.append(var_names)
+
+    ir["all_different"] = valid_groups
 
 
 def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
