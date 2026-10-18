@@ -174,7 +174,7 @@ def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
         errors.append(f"Error in objective: {e}")
 
 
-def _validata_ir_constraints(ir: dict, errors: list[str]) -> None:
+def _validate_ir_constraints(ir: dict, errors: list[str]) -> None:
     if "constraints" not in ir:
         return
 
