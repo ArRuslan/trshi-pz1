@@ -203,7 +203,7 @@ def validate_ir(ir: dict) -> list:
     _validata_ir_variables(ir, errors)
     _validata_ir_all_different(ir, errors)
     _validata_ir_objective(ir, errors)
-    _validata_ir_constraints(ir, errors)
+    _validate_ir_constraints(ir, errors)
 
     try:
         ir_solver.build(ir)
