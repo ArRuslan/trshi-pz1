@@ -394,7 +394,7 @@ def solve(problem: dict) -> dict:
     trace["attempts"].append({"ir": ir, "errors": errors})
 
     if errors:
-        ir = formalize(problem, feedback=(json.dumps(ir), "\n".join(errors)))
+        ir = formalize(problem, feedback=(ir, errors))
         new_errors = validate_ir(ir)
         trace["attempts"].append({"ir": ir, "errors": new_errors})
         if new_errors:
