@@ -52,84 +52,44 @@ VAR_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 SYSTEM = "You translate logic puzzles into a formal constraint representation. You answer only with JSON."
 
-FORMALIZER_PROMPT = """Translate the puzzle below into the specific IR JSON format. 
-Do not solve the puzzle. Return valid JSON only.
+RETRY_TEMPERATURE = 0.4
+STATUS_RANK = {"none": 0, "multiple": 1, "unique": 2, "optimal": 2}
 
-Rules for variables and domains:
-- Use integer domains [low, high], inclusive.
-- To fix a variable to a single value n, use [n, n].
-- For Boolean variables, use [0, 1], where 1 means true.
-- Use {{"values": [v1, v2]}} for non-contiguous integer domains.
-- Variable names must contain only ASCII letters, digits, and underscores
-  and must not start with a digit.
+FORMALIZER_PROMPT = """Translate the puzzle below into the IR JSON format. Do not solve it: encode
+what it says, then stop. Return one JSON object and nothing else.
 
-Rules for all_different:
-- Use all_different only when the puzzle requires the variables to
-  have pairwise-distinct values.
-- Do not use it for Boolean roles or independently selectable features
-  unless distinctness is explicitly required.
-- Put all variables belonging to one distinctness requirement in a
-  single group. Do not create singleton groups.
+Variables and domains
+- One variable per entity (or per attribute), named after it. Names use ASCII letters, digits and
+  underscores only and must not start with a digit.
+- An integer domain is [low, high] inclusive; a fixed value is [n, n]; a yes/no variable is [0, 1]
+  with 1 = true; a non-contiguous set uses {{"values": [v1, v2]}}.
 
-Rules for logic:
-- Use only ==, !=, <, <=, >, >=, and, or, not.
-- Do not use &, |, >>, implication arrows, or other unsupported operators.
-- To express "A implies B", use "not (A) or (B)".
-- Use X == (S) to represent "X is equivalent to S" ONLY when X is
-  a Boolean variable with domain [0, 1].
-- Never equate a position, day, time, or other categorical index directly
-  to a Boolean condition.
-- For ordinary logical combinations, use and, or, and not.
+all_different
+- Only for "one of each" puzzles, where every value is used exactly once: put the whole set of
+  those variables into ONE group.
+- Never for yes/no roles or independently selectable features - several people can be knaves and
+  several features can be built, so those variables must be free to share values.
+- Every name in a group must be a key of "variables".
 
-Example: Three people can independently be knights or knaves.
-Their roles are represented by A, B, and C, each with domain [0, 1].
-Unless the puzzle explicitly requires different roles, use:
-"variables": {{"A": [0, 1], "B": [0, 1], "C": [0, 1]}},
-"all_different": []
+Each constraint is one Boolean condition, written with ==, !=, <, <=, >, >=, and, or, not and
+parentheses (never &, |, >> or arrows). Encode each clause exactly once, as written:
+- "A implies B", "if A then B", "A only if B", "A can only be built if B is built"
+    -> "A <= B" for yes/no variables, equivalently not A or B.
+    Never "A and B", and never "A + B >= 1": that says "at least one", which is weaker.
+- "A and B cannot both ..." -> "(A == 1) + (B == 1) <= 1", never >= 1.
+- "at least k of these conditions" -> "(A == 1) + (B == 1) + ... >= k", every comparison
+  parenthesised. "at most k" and "exactly k" use <= k and == k the same way.
+- "X always tells the truth" / "X always lies" (1 / 0): one constraint "X == (the statement)",
+  with the statement itself written as a Boolean condition using the rules above.
+- Ordering, "next to", "immediately before/after" and exclusions are ordinary comparisons.
+- A budget, a cost limit or a cap on how many items may be chosen is a CONSTRAINT, e.g.
+  "5*Lamp + 4*Mug <= 12" or "Lamp + Mug + Rug <= 2" - not part of the objective.
+- Never equate a category (a position, a day, an hour) to a Boolean condition, never invent a
+  restriction the text does not state, and never leave a numbered clause out.
 
-Counting conditions:
-- To express "at least k of these conditions", use a sum of
-  parenthesized comparisons, such as:
-  "(A == 1) + (B == 1) + (C == 1) >= 2".
-- In these counting expressions, every comparison must be parenthesized.
-- This is the exception to the rule against arithmetic combinations
-  of Boolean conditions.
-
-Optimisation:
-- Use the objective field to express the complete arithmetic expression
-  to maximise or minimise.
-- Do not introduce helper variables such as Total_value unless needed
-  by the IR format and their domains are correct.
-- Ensure that all objective and constraint expressions use supported syntax.
-
-For an optimization objective:
-- Include each weighted feature exactly once.
-- Use only the weights stated in the puzzle.
-- Never repeat a sequence of objective terms.
-- Do not add weights or variables that the puzzle does not specify.
-- Output one compact arithmetic expression.
-
-CRITICAL VALIDATION RULES:
-- Every name inside all_different must exactly match a key in variables.
-- Never place relationship words such as NEXT_TO, DIRECTLY, CLOCKWISE,
-  or BETWEEN inside all_different.
-- A group in all_different means every listed variable has a distinct
-  value. Do not use it for Boolean variables unless distinctness is
-  explicitly required by the puzzle.
-- For knights-and-knaves puzzles, do not use all_different for people’s
-  Boolean roles.
-- Encode "A implies B" as "A != 1 or B == 1" for Boolean variables.
-- Do not encode an implication as "A == 1 and B == 1".
-- Every constraint must be a Boolean condition. Never add 1 to a
-  comparison or leave an arithmetic expression as a standalone
-  constraint.
-- Every objective must be numeric. Include objective only when the
-  puzzle explicitly requires optimization; otherwise omit it.
-- Do not invent constraints or add restrictions that are not stated
-  or logically implied by the puzzle.
-- For a fixed integer value n, use [n, n], not [n].
-- Before returning JSON, verify that every variable name, domain,
-  constraint, and objective follows the IR specification.
+Objective - only when the puzzle asks to maximise or minimise
+- One expression over the weighted sum, each stated weight used exactly once, no invented weights
+  and no helper variables. Omit "objective" entirely otherwise.
 
 {ir_spec}
 
@@ -176,10 +136,40 @@ def build_retry_feedback(ir: dict, errors: list[str]) -> str:
     return "\n".join(instructions)
 
 
-def formalize(problem: dict, feedback: tuple[dict, list[str]] | None = None) -> dict:
-    """Ask the model for an IR encoding of the problem. `feedback` = error messages from a previous attempt."""
+def build_status_feedback(ir: dict, status: str) -> str:
+    if status == "none":
+        why = (
+            "no assignment satisfies every constraint at once, so at least one constraint is "
+            "stronger than what the puzzle says or contradicts another one."
+        )
+        fix = (
+            "Re-read each clue and encode exactly what it states: no invented restriction, no "
+            "extra condition, no clue dropped, and nothing stronger than the wording allows."
+        )
+    else:
+        why = (
+            "more than one assignment satisfies every constraint, so at least one clue is "
+            "missing or encoded too loosely."
+        )
+        fix = (
+            "Re-read every clue and encode each one exactly once. Each constraint must admit "
+            "exactly the cases its clue describes: never join two possible readings of one "
+            "clue with \"or\", never weaken a strict relation into a non-strict one, and never "
+            "leave a clue out. If the puzzle assigns each value exactly once, that is an "
+            "all_different group over those variables."
+        )
+    return (
+        f"Your previous encoding was:\n{json.dumps(ir)}\n"
+        f"The solver checked it and reported status \"{status}\": {why}\n"
+        f"{fix}"
+    )
+
+
+def formalize(problem: dict, feedback: str | tuple[dict, list[str]] | None = None, temperature: float = 0.0) -> dict:
     fb = ""
-    if feedback is not None:
+    if isinstance(feedback, str):
+        fb = f"\n{feedback}\nFollow the correction instructions exactly.\n"
+    elif feedback is not None:
         prev, why = feedback
         fb = (
             f"\nYour previous encoding was:\n{json.dumps(prev)}\n"
@@ -187,7 +177,7 @@ def formalize(problem: dict, feedback: tuple[dict, list[str]] | None = None) -> 
             "Follow the correction instructions exactly.\n"
         )
     prompt = FORMALIZER_PROMPT.format(ir_spec=IR_SPEC, text=problem["text"], feedback=fb)
-    parsed, raw = llm.ask_json(prompt, IRModel, system=SYSTEM)
+    parsed, raw = llm.ask_json(prompt, IRModel, system=SYSTEM, temperature=temperature)
     return parsed.model_dump(exclude_none=True)
 
 
@@ -464,11 +454,30 @@ def solve(problem: dict) -> dict:
 
     try:
         result = run_solver(ir)
-    except ValueError as e:                      # the solver rejected the IR
+    except ValueError as e:  # the solver rejected the IR
         raise HybridError(f"solver rejected the IR: {e}") from e
-    trace["solver"] = {"status": result["status"], "n_solutions": len(result["solutions"]),
-                       "objective": result.get("objective"),
-                       "first_solution": result["solutions"][0] if result["solutions"] else None}
+
+    if result["status"] in ("none", "multiple"):
+        new_ir = None
+        new_result = None
+
+        try:
+            new_ir = formalize(problem, feedback=build_status_feedback(ir, result["status"]), temperature=RETRY_TEMPERATURE)
+            new_errors = validate_ir(new_ir)
+            if not new_errors:
+                new_result = run_solver(new_ir)
+        except (llm.LLMError, ValueError) as e:
+            new_errors = [f"status retry failed: {e}"]
+        trace["attempts"].append({"ir": new_ir, "errors": new_errors})
+        if new_result is not None and STATUS_RANK[new_result["status"]] > STATUS_RANK[result["status"]]:
+            ir, result = new_ir, new_result
+
+    trace["solver"] = {
+        "status": result["status"],
+        "n_solutions": len(result["solutions"]),
+        "objective": result.get("objective"),
+        "first_solution": result["solutions"][0] if result["solutions"] else None
+    }
 
     answer = present(problem, ir, result)
     return {"answer": answer, "trace": trace}
