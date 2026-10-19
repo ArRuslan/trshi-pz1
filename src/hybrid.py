@@ -113,6 +113,9 @@ def _validate_ir_variables(ir: dict, errors: list[str]) -> None:
             continue
 
         if isinstance(domain_or_values, list):
+            if isinstance(domain_or_values, list) and len(domain_or_values) == 1 and type(domain_or_values[0]) is int:
+                domain_or_values.append(domain_or_values[0])
+
             if len(domain_or_values) != 2 \
                     or not isinstance(domain_or_values[0], int) \
                     or not isinstance(domain_or_values[1], int):
@@ -197,6 +200,24 @@ def _validate_ir_all_different(ir: dict, errors: list[str]) -> None:
             )
 
 
+def _expression_root_error(expr: str, *, expect_bool: bool) -> str | None:
+    try:
+        root = ast.parse(expr, mode="eval").body
+    except (SyntaxError, TypeError):
+        return None
+
+    is_not = isinstance(root, ast.UnaryOp) and isinstance(root.op, ast.Not)
+    is_boolean = isinstance(root, (ast.Compare, ast.BoolOp)) or is_not
+
+    if expect_bool and not is_boolean:
+        return "constraint must be a Boolean condition, such as 'A == 1' or '(A == 1) or (B == 1)'"
+
+    if not expect_bool and is_boolean:
+        return "objective must be a numeric expression, not a Boolean condition; maximize or minimize the numeric expression directly"
+
+    return None
+
+
 def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
     if "objective" not in ir:
         return
@@ -210,6 +231,11 @@ def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
         return
 
     expr = obj["maximize"] if "maximize" in obj else obj["minimize"]
+
+    root_error = _expression_root_error(expr, expect_bool=False)
+    if root_error:
+        errors.append(f"Invalid objective: {root_error}")
+        return
 
     conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
 
@@ -231,6 +257,11 @@ def _validate_ir_constraints(ir: dict, errors: list[str]) -> None:
     conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
 
     for constraint in constraints:
+        root_error = _expression_root_error(constraint, expect_bool=True)
+        if root_error:
+            errors.append(f'Invalid constraint "{constraint}": {root_error}')
+            continue
+
         try:
             conv(ast.parse(constraint, mode="eval"))
         except (ValueError, SyntaxError) as e:
