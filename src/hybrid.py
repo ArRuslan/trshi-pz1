@@ -12,6 +12,7 @@ Suggested order of work:
 
 See docs/ir.md for the IR format.
 """
+
 import ast
 import json
 import re
@@ -31,6 +32,7 @@ class HybridError(Exception):
 
 class IRModel(BaseModel):
     """JSON schema the formalizer must follow. Keep it in sync with docs/ir.md."""
+
     variables: dict[str, Any]
     all_different: list[list[str]] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
@@ -186,14 +188,16 @@ def formalize(problem: dict, feedback: tuple[dict, list[str]] | None = None) -> 
             f"It was rejected because:\n{build_retry_feedback(prev, why)}\n"
             "Follow the correction instructions exactly.\n"
         )
-    prompt = FORMALIZER_PROMPT.format(ir_spec=IR_SPEC, text=problem["text"], feedback=fb)
+    prompt = FORMALIZER_PROMPT.format(
+        ir_spec=IR_SPEC, text=problem["text"], feedback=fb
+    )
     parsed, raw = llm.ask_json(prompt, IRModel, system=SYSTEM)
     return parsed.model_dump(exclude_none=True)
 
 
 def _validate_ir_variables(ir: dict, errors: list[str]) -> None:
     if "variables" not in ir:
-        errors.append("IR must contain \"variables\" field")
+        errors.append('IR must contain "variables" field')
         return
 
     for var_name, domain_or_values in ir["variables"].items():
@@ -202,29 +206,40 @@ def _validate_ir_variables(ir: dict, errors: list[str]) -> None:
             continue
 
         if isinstance(domain_or_values, list):
-            if isinstance(domain_or_values, list) and len(domain_or_values) == 1 and type(domain_or_values[0]) is int:
+            if (
+                isinstance(domain_or_values, list)
+                and len(domain_or_values) == 1
+                and type(domain_or_values[0]) is int
+            ):
                 domain_or_values.append(domain_or_values[0])
 
-            if len(domain_or_values) != 2 \
-                    or not isinstance(domain_or_values[0], int) \
-                    or not isinstance(domain_or_values[1], int):
+            if (
+                len(domain_or_values) != 2
+                or not isinstance(domain_or_values[0], int)
+                or not isinstance(domain_or_values[1], int)
+            ):
                 errors.append(
-                    f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, "
+                    f'Variable "{var_name}" has invalid domain: {domain_or_values}, '
                     f"must be an array of two numbers in format [low, high]"
                 )
                 continue
             lo, hi = domain_or_values
             if lo > hi:
-                errors.append(f"Variable \"{var_name}\" has invalid domain: {domain_or_values}, lo must be less than hi")
-        elif isinstance(domain_or_values, dict):
-            if "values" not in domain_or_values \
-                    or not all(isinstance(value, int) for value in domain_or_values["values"]):
                 errors.append(
-                    f"Variable \"{var_name}\" has invalid values: {domain_or_values}, "
-                    f"must be an object in format {{\"values\": [v1, v2, ...]}}"
+                    f'Variable "{var_name}" has invalid domain: {domain_or_values}, lo must be less than hi'
+                )
+        elif isinstance(domain_or_values, dict):
+            if "values" not in domain_or_values or not all(
+                isinstance(value, int) for value in domain_or_values["values"]
+            ):
+                errors.append(
+                    f'Variable "{var_name}" has invalid values: {domain_or_values}, '
+                    f'must be an object in format {{"values": [v1, v2, ...]}}'
                 )
         else:
-            errors.append(f"Variable \"{var_name}\" has invalid domain or values: {domain_or_values}")
+            errors.append(
+                f'Variable "{var_name}" has invalid domain or values: {domain_or_values}'
+            )
 
 
 def _validate_ir_all_different(ir: dict, errors: list[str]) -> None:
@@ -234,20 +249,28 @@ def _validate_ir_all_different(ir: dict, errors: list[str]) -> None:
 
     all_diff = ir.get("all_different", [])
     if not isinstance(all_diff, list):
-        errors.append('"all_different" must be a list of lists of variable names in format [["var1", "var2"], ...]')
+        errors.append(
+            '"all_different" must be a list of lists of variable names in format [["var1", "var2"], ...]'
+        )
         return
 
     for group in all_diff:
-        if not isinstance(group, list) or not all(isinstance(name, str) for name in group):
+        if not isinstance(group, list) or not all(
+            isinstance(name, str) for name in group
+        ):
             errors.append('"all_different" must contain lists of variable names')
             continue
 
         if len(group) < 2:
-            errors.append(f"Invalid all_different group {group}: a group must contain at least two variables")
+            errors.append(
+                f"Invalid all_different group {group}: a group must contain at least two variables"
+            )
             continue
 
         if len(set(group)) != len(group):
-            errors.append(f"Invalid all_different group {group}: duplicate variable names")
+            errors.append(
+                f"Invalid all_different group {group}: duplicate variable names"
+            )
             continue
 
         unknown = [name for name in group if name not in variables]
@@ -314,8 +337,8 @@ def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
     obj = ir["objective"]
     if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
         errors.append(
-            "\"objective\" must be an object "
-            "in format {\"maximise\": \"<expression>\"} or {\"minimize\": \"<expression>\"}"
+            '"objective" must be an object '
+            'in format {"maximise": "<expression>"} or {"minimize": "<expression>"}'
         )
         return
 
@@ -339,13 +362,23 @@ def _validate_ir_constraints(ir: dict, errors: list[str]) -> None:
         return
 
     constraints = ir["constraints"]
-    if not isinstance(constraints, list) or not all(isinstance(c, str) for c in constraints):
-        errors.append(f"\"constraints\" must be an array in format [\"expression\", ...]")
+    if not isinstance(constraints, list) or not all(
+        isinstance(c, str) for c in constraints
+    ):
+        errors.append(f'"constraints" must be an array in format ["expression", ...]')
         return
 
     conv = ir_solver._Conv({var_name: 0 for var_name in ir["variables"]})
 
+    uniq_constraints = set()
+
     for constraint in constraints:
+        if constraint in uniq_constraints:
+            errors.append(f'Duplicate constraint: "{constraint}"')
+            continue
+
+        uniq_constraints.add(constraint)
+
         root_error = _expression_root_error(constraint, expect_bool=True)
         if root_error:
             errors.append(f'Invalid constraint "{constraint}": {root_error}')
@@ -354,7 +387,7 @@ def _validate_ir_constraints(ir: dict, errors: list[str]) -> None:
         try:
             conv(ast.parse(constraint, mode="eval"))
         except (ValueError, SyntaxError) as e:
-            errors.append(f"Error in constraint \"{constraint}\": {e}")
+            errors.append(f'Error in constraint "{constraint}": {e}')
 
 
 def validate_ir(ir: dict) -> list:
@@ -399,10 +432,7 @@ def run_solver(ir: dict) -> dict:
         return result
 
     blocked_ir = deepcopy(ir)
-    terms = [
-        f"({name} == {value})"
-        for name, value in first.items()
-    ]
+    terms = [f"({name} == {value})" for name, value in first.items()]
     blocked_ir.setdefault("constraints", []).append(f"not ({' and '.join(terms)})")
 
     alternative = ir_solver.solve(blocked_ir, limit=1)
@@ -440,11 +470,16 @@ def present(problem: dict, ir: dict, result: dict) -> dict:
     status = result["status"]
     if status == "none":
         return Answer(status="none").model_dump()
-    prompt = PRESENT_PROMPT.format(text=problem["text"], ir=json.dumps(ir, ensure_ascii=False),
-                                   assignment=json.dumps(result["solutions"][0], ensure_ascii=False),
-                                   answer_format=problem["answer_format"])
+    prompt = PRESENT_PROMPT.format(
+        text=problem["text"],
+        ir=json.dumps(ir, ensure_ascii=False),
+        assignment=json.dumps(result["solutions"][0], ensure_ascii=False),
+        answer_format=problem["answer_format"],
+    )
     parsed, raw = llm.ask_json(prompt, Answer)
-    return Answer(status=status, solution=parsed.solution, objective=result.get("objective")).model_dump()
+    return Answer(
+        status=status, solution=parsed.solution, objective=result.get("objective")
+    ).model_dump()
 
 
 def solve(problem: dict) -> dict:
@@ -464,11 +499,14 @@ def solve(problem: dict) -> dict:
 
     try:
         result = run_solver(ir)
-    except ValueError as e:                      # the solver rejected the IR
+    except ValueError as e:  # the solver rejected the IR
         raise HybridError(f"solver rejected the IR: {e}") from e
-    trace["solver"] = {"status": result["status"], "n_solutions": len(result["solutions"]),
-                       "objective": result.get("objective"),
-                       "first_solution": result["solutions"][0] if result["solutions"] else None}
+    trace["solver"] = {
+        "status": result["status"],
+        "n_solutions": len(result["solutions"]),
+        "objective": result.get("objective"),
+        "first_solution": result["solutions"][0] if result["solutions"] else None,
+    }
 
     answer = present(problem, ir, result)
     return {"answer": answer, "trace": trace}
