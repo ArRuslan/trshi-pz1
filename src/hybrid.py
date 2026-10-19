@@ -15,6 +15,7 @@ See docs/ir.md for the IR format.
 import ast
 import json
 import re
+from copy import deepcopy
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
@@ -291,12 +292,38 @@ def validate_ir(ir: dict) -> list:
 
 
 def run_solver(ir: dict) -> dict:
-    """Run Z3 on the IR. Returns {"status": ..., "solutions": [...], "objective": ...}.
-
-    TODO(team): with limit=1 the solver stops after the first solution, so it reports "unique" even when
-     several solutions exist. Think about what limit you need to tell "unique" from "multiple".
-    """
     result = ir_solver.solve(ir, limit=2)
+    solutions = result.get("solutions", [])
+
+    if not solutions:
+        result["status"] = "none"
+        return result
+
+    if len(solutions) >= 2:
+        result["status"] = "multiple"
+        return result
+
+    if ir.get("objective") is not None:
+        return result
+
+    first = solutions[0]
+    if not first:
+        return result
+
+    blocked_ir = deepcopy(ir)
+    terms = [
+        f"({name} == {value})"
+        for name, value in first.items()
+    ]
+    blocked_ir.setdefault("constraints", []).append(f"not ({' and '.join(terms)})")
+
+    alternative = ir_solver.solve(blocked_ir, limit=1)
+
+    if alternative.get("solutions"):
+        result["status"] = "multiple"
+    else:
+        result["status"] = "unique"
+
     return result
 
 
