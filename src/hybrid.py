@@ -75,9 +75,19 @@ Puzzle:
 {feedback}"""
 
 
-def formalize(problem: dict, feedback: Optional[str] = None) -> dict:
+def formalize(problem: dict, feedback: tuple[str, str] | None = None) -> dict:
     """Ask the model for an IR encoding of the problem. `feedback` = error messages from a previous attempt."""
-    fb = f"\nYour previous encoding was rejected:\n{feedback}\nFix these problems.\n" if feedback else ""
+    fb = ""
+    if feedback is not None:
+        prev, why = feedback
+        fb = (
+            f"\n"
+            f"Your previous encoding was:\n"
+            f"{prev}\n"
+            f"It was rejected because:\n"
+            f"{why}\n"
+            f"Fix these problems and write NEW IR.\n"
+        )
     prompt = FORMALIZER_PROMPT.format(ir_spec=IR_SPEC, text=problem["text"], feedback=fb)
     parsed, raw = llm.ask_json(prompt, IRModel, system=SYSTEM)
     return parsed.model_dump(exclude_none=True)
@@ -218,7 +228,7 @@ def run_solver(ir: dict) -> dict:
     """Run Z3 on the IR. Returns {"status": ..., "solutions": [...], "objective": ...}.
 
     TODO(team): with limit=1 the solver stops after the first solution, so it reports "unique" even when
-    several solutions exist. Think about what limit you need to tell "unique" from "multiple".
+     several solutions exist. Think about what limit you need to tell "unique" from "multiple".
     """
     result = ir_solver.solve(ir, limit=2)
     return result
@@ -265,7 +275,7 @@ def solve(problem: dict) -> dict:
     trace["attempts"].append({"ir": ir, "errors": errors})
 
     if errors:
-        ir = formalize(problem, feedback="\n".join(errors))
+        ir = formalize(problem, feedback=(json.dumps(ir), "\n".join(errors)))
         new_errors = validate_ir(ir)
         trace["attempts"].append({"ir": ir, "errors": new_errors})
         if new_errors:
