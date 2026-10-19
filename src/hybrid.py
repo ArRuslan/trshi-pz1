@@ -85,18 +85,44 @@ Puzzle:
 {feedback}"""
 
 
-def formalize(problem: dict, feedback: tuple[str, str] | None = None) -> dict:
+def build_retry_feedback(ir: dict, errors: list[str]) -> str:
+    instructions = [
+        "Correct every error below.",
+        "Return one compact, complete JSON object.",
+        "Re-read the original puzzle. Preserve its meaning.",
+    ]
+
+    if any("Impossible all_different group" in e for e in errors):
+        instructions.append(
+            "MANDATORY CORRECTION: The previous all_different group is "
+            "mathematically impossible. Re-read the original puzzle. "
+            "If the puzzle does not explicitly require these variables "
+            "to have pairwise-distinct values, set all_different to []. "
+            "Do not repeat the impossible group. Do not add an objective "
+            "unless the original puzzle requires optimization."
+        )
+
+    if any("objective" in e.lower() for e in errors):
+        instructions.append(
+            "Write the objective once, using only the weights in the "
+            "original puzzle. For binary variables use weight * Variable. "
+            "Include each weighted feature once; do not repeat terms or "
+            "invent weights. Omit objective unless optimization is required."
+        )
+
+    instructions.append("Validation errors:\n- " + "\n- ".join(errors))
+    return "\n".join(instructions)
+
+
+def formalize(problem: dict, feedback: tuple[dict, list[str]] | None = None) -> dict:
     """Ask the model for an IR encoding of the problem. `feedback` = error messages from a previous attempt."""
     fb = ""
     if feedback is not None:
         prev, why = feedback
         fb = (
-            f"\n"
-            f"Your previous encoding was:\n"
-            f"{prev}\n"
-            f"It was rejected because:\n"
-            f"{why}\n"
-            f"Fix these problems and write NEW IR.\n"
+            f"\nYour previous encoding was:\n{json.dumps(prev)}\n"
+            f"It was rejected because:\n{build_retry_feedback(prev, why)}\n"
+            "Follow the correction instructions exactly.\n"
         )
     prompt = FORMALIZER_PROMPT.format(ir_spec=IR_SPEC, text=problem["text"], feedback=fb)
     parsed, raw = llm.ask_json(prompt, IRModel, system=SYSTEM)
