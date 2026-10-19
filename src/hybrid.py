@@ -14,6 +14,7 @@ See docs/ir.md for the IR format.
 """
 import ast
 import json
+import re
 from typing import Any, Optional
 
 from pydantic import BaseModel, Field
@@ -46,6 +47,7 @@ IR_SPEC = """IR format (JSON):
 Expressions may use: integer numbers, variable names, + - * // %, == != < <= > >=, and, or, not, abs(), parentheses.
 Inside arithmetic a comparison counts as 1 (true) or 0 (false), e.g. "(A == 1) + (B == 1) == 1".
 Variable names must be identifiers: letters, digits and underscores only, no spaces."""
+VAR_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 SYSTEM = "You translate logic puzzles into a formal constraint representation. You answer only with JSON."
 
@@ -100,12 +102,16 @@ def formalize(problem: dict, feedback: tuple[str, str] | None = None) -> dict:
     return parsed.model_dump(exclude_none=True)
 
 
-def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
+def _validate_ir_variables(ir: dict, errors: list[str]) -> None:
     if "variables" not in ir:
         errors.append("IR must contain \"variables\" field")
         return
 
     for var_name, domain_or_values in ir["variables"].items():
+        if not isinstance(var_name, str) or not VAR_NAME_PATTERN.fullmatch(var_name):
+            errors.append(f"Invalid variable name: {var_name!r}")
+            continue
+
         if isinstance(domain_or_values, list):
             if len(domain_or_values) != 2 \
                     or not isinstance(domain_or_values[0], int) \
@@ -131,6 +137,7 @@ def _validata_ir_variables(ir: dict, errors: list[str]) -> None:
 
 def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
     if "all_different" not in ir:
+def _validate_ir_all_different(ir: dict, errors: list[str]) -> None:
         return
 
     all_diff = ir["all_different"]
@@ -170,6 +177,7 @@ def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
 
 
 def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
+def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
     if "objective" not in ir:
         return
 
@@ -217,9 +225,9 @@ def validate_ir(ir: dict) -> list:
 
     errors = []
 
-    _validata_ir_variables(ir, errors)
-    _validata_ir_all_different(ir, errors)
-    _validata_ir_objective(ir, errors)
+    _validate_ir_variables(ir, errors)
+    _validate_ir_all_different(ir, errors)
+    _validate_ir_objective(ir, errors)
     _validate_ir_constraints(ir, errors)
 
     try:
