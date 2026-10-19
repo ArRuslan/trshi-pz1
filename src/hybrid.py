@@ -135,48 +135,68 @@ def _validate_ir_variables(ir: dict, errors: list[str]) -> None:
             errors.append(f"Variable \"{var_name}\" has invalid domain or values: {domain_or_values}")
 
 
-def _validata_ir_all_different(ir: dict, errors: list[str]) -> None:
-    if "all_different" not in ir:
 def _validate_ir_all_different(ir: dict, errors: list[str]) -> None:
+    variables = ir.get("variables")
+    if not isinstance(variables, dict):
         return
 
-    all_diff = ir["all_different"]
+    all_diff = ir.get("all_different", [])
     if not isinstance(all_diff, list):
-        errors.append('"all_different" must be an array in format [["var1", "var2"], ...]')
+        errors.append('"all_different" must be a list of lists of variable names in format [["var1", "var2"], ...]')
         return
 
-    valid_groups = []
-    for var_names in all_diff:
-        if not isinstance(var_names, list) or not all(isinstance(v, str) for v in var_names):
-            errors.append('"all_different" must be a list in format [["var1", "var2"], ...]')
+    for group in all_diff:
+        if not isinstance(group, list) or not all(isinstance(name, str) for name in group):
+            errors.append('"all_different" must contain lists of variable names')
             continue
 
-        has_unknown = False
-        for var_name in var_names:
-            if var_name not in ir["variables"]:
-                errors.append(f'in "all_different": unknown variable "{var_name}"')
-                has_unknown = True
-        
-        if has_unknown:
+        if len(group) < 2:
+            errors.append(f"Invalid all_different group {group}: a group must contain at least two variables")
+            continue
+
+        if len(set(group)) != len(group):
+            errors.append(f"Invalid all_different group {group}: duplicate variable names")
+            continue
+
+        unknown = [name for name in group if name not in variables]
+        if unknown:
+            errors.append(f"all_different contains unknown variables: {unknown}")
             continue
 
         possible_values = set()
-        for var_name in var_names:
-            dom = ir["variables"][var_name]
-            if isinstance(dom, list) and len(dom) == 2:
-                possible_values.update(range(dom[0], dom[1] + 1))
-            elif isinstance(dom, dict) and "values" in dom:
-                possible_values.update(dom["values"])
+        domains_valid = True
 
-        if len(var_names) > len(possible_values):
-            continue
+        for name in group:
+            domain = variables[name]
 
-        valid_groups.append(var_names)
+            if (
+                isinstance(domain, list)
+                and len(domain) == 2
+                and all(type(v) is int for v in domain)
+                and domain[0] <= domain[1]
+            ):
+                lo, hi = domain
+                possible_values.update(range(lo, hi + 1))
 
-    ir["all_different"] = valid_groups
+            elif (
+                isinstance(domain, dict)
+                and isinstance(domain.get("values"), list)
+                and domain["values"]
+                and all(type(v) is int for v in domain["values"])
+            ):
+                possible_values.update(domain["values"])
+
+            else:
+                domains_valid = False
+
+        if domains_valid and len(group) > len(possible_values):
+            errors.append(
+                f"Impossible all_different group {group}: "
+                f"{len(group)} variables have only "
+                f"{len(possible_values)} possible values"
+            )
 
 
-def _validata_ir_objective(ir: dict, errors: list[str]) -> None:
 def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
     if "objective" not in ir:
         return
