@@ -70,6 +70,13 @@ Important rules:
 
 {ir_spec}
 
+Example IR:
+{{
+ "variables": {{"Intercity": [1, 3], "Regional": [1, 3], "Express": [1, 3]}},
+ "all_different": [["Intercity", "Regional", "Express"]],
+ "constraints": ["Express != 1", "Regional < Intercity", "Intercity != 3"]
+}}
+
 Puzzle:
 {text}
 {feedback}"""
