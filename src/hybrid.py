@@ -52,32 +52,94 @@ VAR_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 SYSTEM = "You translate logic puzzles into a formal constraint representation. You answer only with JSON."
 
-# TODO(team): this prompt is the heart of the hybrid pipeline. Things worth considering:
-#   * how should the model choose variables? (one variable per entity? per attribute value?)
-#   * how should it encode positions, days, "morning/afternoon", "next to", "between", "at most"?
-#   * facts that the text does not state but that the model must know (calendar, working week, ...);
-#   * a worked example (few-shot) on a puzzle that is NOT in your set;
-#   * how to encode knights and knaves: a statement S by person X becomes  X == (S).
-FORMALIZER_PROMPT = """Translate the puzzle below into the IR format. Do not solve the puzzle.
-Important rules:
-- Do NOT use Python lists [], tuples (), or quotes inside constraints. Use only raw variable names, integers, and operators.
-- "all_different": Use ONLY when the puzzle explicitly requires values to be distinct. Otherwise, set "all_different": [].
-- Boolean / Truth logic:
-  * For truth values, binary roles, or conditions, use variables with domain [0, 1] (1 = true, 0 = false).
-  * If a variable X asserts or is equivalent to a condition S, encode it strictly as: X == (S).
-  * Examples:
-    - If X says "Y is a knight": X == (Y == 1)
-    - If X says "Y is a knave": X == (Y == 0)
-    - If X says "at least one of Y, Z is a knave": X == (Y == 0 or Z == 0)
-  * STRICT: Never use arithmetic operators (+, -, *) for logic. Use ONLY "or", "and", "not".
+FORMALIZER_PROMPT = """Translate the puzzle below into the specific IR JSON format. 
+Do not solve the puzzle. Return valid JSON only.
+
+Rules for variables and domains:
+- Use integer domains [low, high], inclusive.
+- To fix a variable to a single value n, use [n, n].
+- For Boolean variables, use [0, 1], where 1 means true.
+- Use {{"values": [v1, v2]}} for non-contiguous integer domains.
+- Variable names must contain only ASCII letters, digits, and underscores
+  and must not start with a digit.
+
+Rules for all_different:
+- Use all_different only when the puzzle requires the variables to
+  have pairwise-distinct values.
+- Do not use it for Boolean roles or independently selectable features
+  unless distinctness is explicitly required.
+- Put all variables belonging to one distinctness requirement in a
+  single group. Do not create singleton groups.
+
+Rules for logic:
+- Use only ==, !=, <, <=, >, >=, and, or, not.
+- Do not use &, |, >>, implication arrows, or other unsupported operators.
+- To express "A implies B", use "not (A) or (B)".
+- Use X == (S) to represent "X is equivalent to S" ONLY when X is
+  a Boolean variable with domain [0, 1].
+- Never equate a position, day, time, or other categorical index directly
+  to a Boolean condition.
+- For ordinary logical combinations, use and, or, and not.
+
+Example: Three people can independently be knights or knaves.
+Their roles are represented by A, B, and C, each with domain [0, 1].
+Unless the puzzle explicitly requires different roles, use:
+"variables": {{"A": [0, 1], "B": [0, 1], "C": [0, 1]}},
+"all_different": []
+
+Counting conditions:
+- To express "at least k of these conditions", use a sum of
+  parenthesized comparisons, such as:
+  "(A == 1) + (B == 1) + (C == 1) >= 2".
+- In these counting expressions, every comparison must be parenthesized.
+- This is the exception to the rule against arithmetic combinations
+  of Boolean conditions.
+
+Optimisation:
+- Use the objective field to express the complete arithmetic expression
+  to maximise or minimise.
+- Do not introduce helper variables such as Total_value unless needed
+  by the IR format and their domains are correct.
+- Ensure that all objective and constraint expressions use supported syntax.
+
+For an optimization objective:
+- Include each weighted feature exactly once.
+- Use only the weights stated in the puzzle.
+- Never repeat a sequence of objective terms.
+- Do not add weights or variables that the puzzle does not specify.
+- Output one compact arithmetic expression.
+
+CRITICAL VALIDATION RULES:
+- Every name inside all_different must exactly match a key in variables.
+- Never place relationship words such as NEXT_TO, DIRECTLY, CLOCKWISE,
+  or BETWEEN inside all_different.
+- A group in all_different means every listed variable has a distinct
+  value. Do not use it for Boolean variables unless distinctness is
+  explicitly required by the puzzle.
+- For knights-and-knaves puzzles, do not use all_different for people’s
+  Boolean roles.
+- Encode "A implies B" as "A != 1 or B == 1" for Boolean variables.
+- Do not encode an implication as "A == 1 and B == 1".
+- Every constraint must be a Boolean condition. Never add 1 to a
+  comparison or leave an arithmetic expression as a standalone
+  constraint.
+- Every objective must be numeric. Include objective only when the
+  puzzle explicitly requires optimization; otherwise omit it.
+- Do not invent constraints or add restrictions that are not stated
+  or logically implied by the puzzle.
+- For a fixed integer value n, use [n, n], not [n].
+- Before returning JSON, verify that every variable name, domain,
+  constraint, and objective follows the IR specification.
 
 {ir_spec}
 
-Example IR:
+Example:
+Problem: Three trains leave from platforms 1, 2 and 3: an intercity, a regional and an express, one per platform. The express does not leave from platform 1. The regional leaves from a platform with a lower number than the intercity. The intercity does not leave from platform 3.
+IR:
 {{
- "variables": {{"Intercity": [1, 3], "Regional": [1, 3], "Express": [1, 3]}},
- "all_different": [["Intercity", "Regional", "Express"]],
- "constraints": ["Express != 1", "Regional < Intercity", "Intercity != 3"]
+  "variables": {{"Intercity": [1, 3], "Regional": [1, 3], "Express": [1, 3]}},
+  "all_different": [["Intercity", "Regional", "Express"]],
+  "constraints": ["Express != 1", "Regional < Intercity", "Intercity != 3"]
 }}
 
 Puzzle:
