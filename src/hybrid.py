@@ -334,7 +334,7 @@ def _validate_ir_objective(ir: dict, errors: list[str]) -> None:
     if not isinstance(obj, dict) or not ("maximize" in obj or "minimize" in obj):
         errors.append(
             '"objective" must be an object '
-            'in format {"maximise": "<expression>"} or {"minimize": "<expression>"}'
+            'in format {"maximize": "<expression>"} or {"minimize": "<expression>"}'
         )
         return
 
