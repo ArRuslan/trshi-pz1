@@ -63,6 +63,8 @@ Variables and domains
   underscores only and must not start with a digit.
 - An integer domain is [low, high] inclusive; a fixed value is [n, n]; a yes/no variable is [0, 1]
   with 1 = true; a non-contiguous set uses {{"values": [v1, v2]}}.
+- For an ordered set (chairs, hours, days, ranks) use the numbers the puzzle itself gives; for a
+  working week use 1 = Monday .. 5 = Friday, and invent a longer cycle only if the puzzle names one.
 
 all_different
 - Only for "one of each" puzzles, where every value is used exactly once: put the whole set of
@@ -73,19 +75,35 @@ all_different
 
 Each constraint is one Boolean condition, written with ==, !=, <, <=, >, >=, and, or, not and
 parentheses (never &, |, >> or arrows). Encode each clause exactly once, as written:
+- One clause in, one constraint out, in the form that clause's own wording calls for. Never glue
+  two clauses into one constraint, and never wrap a clause in "... <= 1" unless that clause itself
+  says the two named things cannot BOTH hold: "<= 1" only ever means "not both", so fusing it onto
+  another clause silently forbids that pair and forces the rest of the puzzle to fit around it.
 - "A implies B", "if A then B", "A only if B", "A can only be built if B is built"
     -> "A <= B" for yes/no variables, equivalently not A or B.
     Never "A and B", and never "A + B >= 1": that says "at least one", which is weaker.
 - "A and B cannot both ..." -> "(A == 1) + (B == 1) <= 1", never >= 1.
 - "at least k of these conditions" -> "(A == 1) + (B == 1) + ... >= k", every comparison
   parenthesised. "at most k" and "exactly k" use <= k and == k the same way.
-- "X always tells the truth" / "X always lies" (1 / 0): one constraint "X == (the statement)",
-  with the statement itself written as a Boolean condition using the rules above.
-- Ordering, "next to", "immediately before/after" and exclusions are ordinary comparisons.
+- A quoted statement, "X says: S", is a statement BY X and becomes ONE constraint "X == (S)",
+  with S written as a Boolean condition using the rules above. Do not restate S as a fact of its
+  own, and do not chain the speakers' statements into implications between their roles. Such roles
+  are free variables: never all_different over them and never a cap on how many hold one of them -
+  the puzzle never says how many of each kind there are.
+- A clause that names ONE member of a sequence by description - "the first", "the middle",
+  "the last", "the one just before the next boundary" - is ONE equality on that one value, e.g.
+  "the middle of the week" -> "Mid == 3" for a five-day week. Not a list of exclusions.
+- Ordering and exclusions are ordinary comparisons. Around a round table with n numbered seats:
+  "next to" -> "(abs(A - B) == 1) or (abs(A - B) == n-1)";
+  "directly opposite" (n even) -> "abs(A - B) == n/2";
+  "immediately clockwise from B" -> "(A == B + 1) or (A == B - (n-1))", counter-clockwise with
+  the two signs swapped.
 - A budget, a cost limit or a cap on how many items may be chosen is a CONSTRAINT, e.g.
   "5*Lamp + 4*Mug <= 12" or "Lamp + Mug + Rug <= 2" - not part of the objective.
-- Never equate a category (a position, a day, an hour) to a Boolean condition, never invent a
-  restriction the text does not state, and never leave a numbered clause out.
+- Never equate a category (a position, a day, an hour) to a Boolean condition, and never invent a
+  restriction the text does not state. Leave nothing out: every numbered clause AND every fact in
+  the opening sentences - a budget, a limit on how many items, which values are in play - becomes
+  a constraint of its own, not something the objective takes care of.
 
 Objective - only when the puzzle asks to maximise or minimise
 - One expression over the weighted sum, each stated weight used exactly once, no invented weights
@@ -100,6 +118,16 @@ IR:
   "variables": {{"Intercity": [1, 3], "Regional": [1, 3], "Express": [1, 3]}},
   "all_different": [["Intercity", "Regional", "Express"]],
   "constraints": ["Express != 1", "Regional < Intercity", "Intercity != 3"]
+}}
+
+Example (choosing items under a budget):
+Problem: "Pick at most two of three items: Mug (cost 3, value 5), Lamp (cost 4, value 6) and
+Rug (cost 2, value 4). The budget is 5. The Lamp may be built only if the Rug is."
+IR:
+{{
+  "variables": {{"Mug": [0, 1], "Lamp": [0, 1], "Rug": [0, 1]}},
+  "constraints": ["3*Mug + 4*Lamp + 2*Rug <= 5", "Mug + Lamp + Rug <= 2", "Lamp <= Rug"],
+  "objective": {{"maximize": "5*Mug + 6*Lamp + 4*Rug"}}
 }}
 
 Puzzle:
@@ -347,11 +375,54 @@ def _validate_ir_constraints(ir: dict, errors: list[str]) -> None:
             errors.append(f"Error in constraint \"{constraint}\": {e}")
 
 
+def _sanitize_names(ir: dict) -> None:
+    variables = ir.get("variables")
+    if not isinstance(variables, dict):
+        return
+
+    taken = set(variables)
+    mapping: dict[str, str] = {}
+    for name in list(variables):
+        if isinstance(name, str) and VAR_NAME_PATTERN.fullmatch(name):
+            continue
+        base = re.sub(r"\W", "_", "_" + name if name[:1].isdigit() else name) or "_"
+        new_name, i = base, 1
+        while new_name in taken:
+            i += 1
+            new_name = f"{base}_{i}"
+        taken.add(new_name)
+        mapping[name] = new_name
+
+    if not mapping:
+        return
+
+    def rewrite(expr: str) -> str:
+        if not isinstance(expr, str):
+            return expr
+        for old, new in mapping.items():
+            if old:
+                expr = re.sub(rf"(?<!\w){re.escape(old)}(?!\w)" , new, expr)
+        return expr
+
+    ir["variables"] = {mapping.get(k, k): v for k, v in variables.items()}
+    ir["constraints"] = [rewrite(c) for c in ir.get("constraints", [])]
+    if isinstance(ir.get("all_different"), list):
+        ir["all_different"] = [[rewrite(n) for n in g] if isinstance(g, list) else g for g in ir["all_different"]]
+    if isinstance(ir.get("objective"), dict) and ir["objective"]:
+        (obj, expression), = ir["objective"].items()
+        ir["objective"] = {obj: rewrite(expression)}
+
+
+def _repair_all_different(ir: dict) -> None:
+    groups = ir.get("all_different")
+    if not isinstance(groups, list):
+        return
+    ir["all_different"] = list(filter(lambda g: len(g) >= 2, map(set, groups)))
+
+
 def validate_ir(ir: dict) -> list:
-    """Return a list of human-readable error messages; an empty list means the IR is valid.
-    Hint: ir_solver.build(ir) raises ValueError with a readable message for unknown variables and
-    unsupported syntax - you can call it inside try/except and turn the exception into an error message.
-    """
+    _sanitize_names(ir)
+    _repair_all_different(ir)
 
     errors = []
 
@@ -360,11 +431,12 @@ def validate_ir(ir: dict) -> list:
     _validate_ir_objective(ir, errors)
     _validate_ir_constraints(ir, errors)
 
-    try:
-        ir_solver.build(ir)
-    except (ValueError, SyntaxError) as e:
-        err_msg = str(e)
-        errors.append(f"Invalid expression or syntax: {err_msg}")
+    if not errors:
+        try:
+            ir_solver.build(ir)
+        except (ValueError, SyntaxError, KeyError, TypeError, IndexError) as e:
+            err_msg = str(e)
+            errors.append(f"Invalid expression or syntax: {err_msg}")
 
     return errors
 
