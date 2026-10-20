@@ -1,0 +1,122 @@
+{
+ "problem": "C1",
+ "pipeline": "hybrid",
+ "run": 4,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:35:22",
+ "answer": {
+  "status": "none",
+  "solution": {},
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Olha": [
+       0,
+       1
+      ],
+      "Pylyp": [
+       0,
+       1
+      ],
+      "Rostyslav": [
+       0,
+       1
+      ]
+     },
+     "all_different": [
+      [
+       "Olha",
+       "Pylyp",
+       "Rostyslav"
+      ]
+     ],
+     "constraints": [
+      "(Olha == 1) + (Pylyp == 1) + (Rostyslav == 1) <= 1",
+      "not (Olha == 1) <= (Pylyp == 1)",
+      "not (Pylyp == 1) <= (Rostyslav == 0)",
+      "not (Rostyslav == 0) <= (Olha == 1)"
+     ]
+    },
+    "errors": [
+     "Impossible all_different group ['Olha', 'Pylyp', 'Rostyslav']: 3 variables have only 2 possible values"
+    ]
+   },
+   {
+    "ir": {
+     "variables": {
+      "Olha": [
+       0,
+       1
+      ],
+      "Pylyp": [
+       0,
+       1
+      ],
+      "Rostyslav": [
+       0,
+       1
+      ]
+     },
+     "all_different": [],
+     "constraints": [
+      "(Olha == 1) + (Pylyp == 1) + (Rostyslav == 1) <= 1",
+      "not (Olha == 1) <= (Pylyp == 1)",
+      "not (Pylyp == 1) <= (Rostyslav == 0)",
+      "not (Rostyslav == 0) <= (Olha == 1)"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "Olha": [
+       0,
+       1
+      ],
+      "Pylyp": [
+       0,
+       1
+      ],
+      "Rostyslav": [
+       0,
+       1
+      ]
+     },
+     "all_different": [
+      [
+       "Olha",
+       "Pylyp",
+       "Rostyslav"
+      ]
+     ],
+     "constraints": [
+      "(Olha == 1) + (Pylyp == 1) + (Rostyslav == 1) <= 1",
+      "not (Olha == 1) <= (Pylyp == 1)",
+      "not (Pylyp == 1) <= (Rostyslav == 0)",
+      "not (Rostyslav == 0) <= (Olha == 1)",
+      "Olha != 1 <= (Pylyp == 1)",
+      "Pylyp != 1 <= (Rostyslav == 0)",
+      "Rostyslav != 0 <= (Olha == 1)"
+     ]
+    },
+    "errors": [
+     "Impossible all_different group ['Olha', 'Pylyp', 'Rostyslav']: 3 variables have only 2 possible values"
+    ]
+   }
+  ],
+  "solver": {
+   "status": "none",
+   "n_solutions": 0,
+   "objective": null,
+   "first_solution": null
+  }
+ },
+ "error": null,
+ "seconds": 49.2,
+ "llm_calls": 3
+}

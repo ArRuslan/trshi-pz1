@@ -1,0 +1,134 @@
+{
+ "problem": "C4",
+ "pipeline": "hybrid",
+ "run": 1,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:54:18",
+ "answer": {
+  "status": "multiple",
+  "solution": {
+   "Andrii": "Tuesday",
+   "Bohdana": "Monday",
+   "Vasyl": "Friday",
+   "Hanna": "Wednesday",
+   "Denys": "Thursday"
+  },
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Andrii": [
+       1,
+       5
+      ],
+      "Bohdana": [
+       1,
+       5
+      ],
+      "Vasyl": [
+       1,
+       5
+      ],
+      "Hanna": [
+       1,
+       5
+      ],
+      "Denys": [
+       1,
+       5
+      ]
+     },
+     "all_different": [
+      [
+       "Hanna",
+       "Andrii",
+       "Bohdana",
+       "Denys",
+       "Vasyl"
+      ]
+     ],
+     "constraints": [
+      "Vasyl == 5",
+      "(Hanna == 3) + (Vasyl == 4) <= 1",
+      "Andrii == Bohdana + 1",
+      "Denys != 1"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "Andrii": [
+       1,
+       5
+      ],
+      "Bohdana": [
+       1,
+       5
+      ],
+      "Vasyl": [
+       1,
+       5
+      ],
+      "Hanna": [
+       1,
+       5
+      ],
+      "Denys": [
+       1,
+       5
+      ]
+     },
+     "all_different": [
+      [
+       "Hanna",
+       "Andrii",
+       "Bohdana",
+       "Denys",
+       "Vasyl"
+      ]
+     ],
+     "constraints": [
+      "(Vasyl == 5) + (Hanna == 3) <= 1",
+      "(Vasyl == 4) + (Hanna == 3) <= 1",
+      "Andrii == Bohdana + 1",
+      "Denys != 1",
+      "Vasyl != 1",
+      "Vasyl != 2",
+      "Hanna != 1",
+      "Hanna != 2",
+      "Hanna != 5",
+      "Denys != 1",
+      "Denys != 2",
+      "Denys != 5",
+      "Bohdana != 1",
+      "Bohdana != 2",
+      "Bohdana != 5"
+     ]
+    },
+    "errors": [
+     "Duplicate constraint: \"Denys != 1\""
+    ]
+   }
+  ],
+  "solver": {
+   "status": "multiple",
+   "n_solutions": 2,
+   "objective": null,
+   "first_solution": {
+    "Andrii": 2,
+    "Bohdana": 1,
+    "Vasyl": 5,
+    "Hanna": 3,
+    "Denys": 4
+   }
+  }
+ },
+ "error": null,
+ "seconds": 51.3,
+ "llm_calls": 3
+}

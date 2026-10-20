@@ -1,0 +1,206 @@
+{
+ "problem": "C3",
+ "pipeline": "hybrid",
+ "run": 3,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:50:14",
+ "answer": {
+  "status": "none",
+  "solution": {},
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Kostiantyn": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Liudmyla": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Mykhailo": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Nataliia": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ]
+     },
+     "all_different": [],
+     "constraints": [
+      "(abs(Iryna - Orest) == 1) or (abs(Iryna - Orest) == 5)",
+      "Kostiantyn == 3",
+      "(abs(Kostiantyn - Liudmyla) == 1) or (abs(Kostiantyn - Liudmyla) == 5)",
+      "(abs(Orest - Mykhailo) == 1) or (abs(Orest - Mykhailo) == 5)",
+      "(abs(Liudmyla - Nataliia) == -1)",
+      "Orest != 2"
+     ]
+    },
+    "errors": [
+     "Variable \"Orest\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Kostiantyn\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Liudmyla\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Mykhailo\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Nataliia\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]"
+    ]
+   },
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       1,
+       6
+      ],
+      "Kostiantyn": [
+       1,
+       6
+      ],
+      "Liudmyla": [
+       1,
+       6
+      ],
+      "Mykhailo": [
+       1,
+       6
+      ],
+      "Nataliia": [
+       1,
+       6
+      ]
+     },
+     "all_different": [
+      [
+       "Nataliia",
+       "Kostiantyn",
+       "Orest",
+       "Mykhailo",
+       "Liudmyla"
+      ]
+     ],
+     "constraints": [
+      "(abs(Iryna - Orest) == 1) or (abs(Iryna - Orest) == 5)",
+      "Kostiantyn == 3",
+      "(abs(Kostiantyn - Liudmyla) == 1) or (abs(Kostiantyn - Liudmyla) == 5)",
+      "(abs(Orest - Mykhailo) == 1) or (abs(Orest - Mykhailo) == 5)",
+      "(abs(Liudmyla - Nataliia) == -1)",
+      "Orest != 2"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      "Kostiantyn": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      "Liudmyla": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      "Mykhailo": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ],
+      "Nataliia": [
+       2,
+       3,
+       4,
+       5,
+       6
+      ]
+     },
+     "all_different": [
+      [
+       "Kostiantyn",
+       "Orest",
+       "Liudmyla"
+      ]
+     ],
+     "constraints": [
+      "(abs(Iryna - Orest) == 1)",
+      "Kostiantyn == 3",
+      "(abs(Kostiantyn - Liudmyla) == 1) or (abs(Kostiantyn - Liudmyla) == 5)",
+      "(abs(Orest - Mykhailo) == 1) or (abs(Orest - Mykhailo) == 5)",
+      "(Liudmyla - Nataliia) % 6 == -1",
+      "Orest != 2"
+     ]
+    },
+    "errors": [
+     "Variable \"Orest\" has invalid domain: [2, 3, 4, 5, 6], must be an array of two numbers in format [low, high]",
+     "Variable \"Kostiantyn\" has invalid domain: [2, 3, 4, 5, 6], must be an array of two numbers in format [low, high]",
+     "Variable \"Liudmyla\" has invalid domain: [2, 3, 4, 5, 6], must be an array of two numbers in format [low, high]",
+     "Variable \"Mykhailo\" has invalid domain: [2, 3, 4, 5, 6], must be an array of two numbers in format [low, high]",
+     "Variable \"Nataliia\" has invalid domain: [2, 3, 4, 5, 6], must be an array of two numbers in format [low, high]"
+    ]
+   }
+  ],
+  "solver": {
+   "status": "none",
+   "n_solutions": 0,
+   "objective": null,
+   "first_solution": null
+  }
+ },
+ "error": null,
+ "seconds": 82.1,
+ "llm_calls": 3
+}

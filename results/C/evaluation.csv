@@ -1,0 +1,51 @@
+problem,title,pipeline,run,correct,status,expected_status,match_pct,llm_calls,seconds,reason
+C1,Knights and knaves (3),hybrid,1,False,multiple,unique,67,4,98.2,"status multiple, expected unique"
+C1,Knights and knaves (3),hybrid,2,False,none,unique,0,3,48.8,"status none, expected unique"
+C1,Knights and knaves (3),hybrid,3,False,none,unique,0,3,51.3,"status none, expected unique"
+C1,Knights and knaves (3),hybrid,4,False,none,unique,0,3,49.2,"status none, expected unique"
+C1,Knights and knaves (3),hybrid,5,False,none,unique,0,3,42.2,"status none, expected unique"
+C1,Knights and knaves (3),monolith,1,False,multiple,unique,33,1,20.9,"status multiple, expected unique"
+C1,Knights and knaves (3),monolith,2,False,multiple,unique,33,1,7.6,"status multiple, expected unique"
+C1,Knights and knaves (3),monolith,3,False,multiple,unique,33,1,7.7,"status multiple, expected unique"
+C1,Knights and knaves (3),monolith,4,False,multiple,unique,33,1,7.6,"status multiple, expected unique"
+C1,Knights and knaves (3),monolith,5,False,multiple,unique,33,1,7.6,"status multiple, expected unique"
+C2,Release planning (optimization),hybrid,1,False,multiple,optimal,,4,136.1,"status multiple, expected optimal; objective None, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),hybrid,2,False,multiple,optimal,,4,113.7,"status multiple, expected optimal; objective None, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),hybrid,3,False,multiple,optimal,,4,113.5,"status multiple, expected optimal; objective None, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),hybrid,4,False,multiple,optimal,,4,112.9,"status multiple, expected optimal; objective None, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),hybrid,5,False,multiple,optimal,,4,110.5,"status multiple, expected optimal; objective None, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),monolith,1,False,multiple,optimal,,1,11.9,"status multiple, expected optimal; objective 0, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),monolith,2,False,multiple,optimal,,1,10.1,"status multiple, expected optimal; objective 0, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),monolith,3,False,multiple,optimal,,1,10.0,"status multiple, expected optimal; objective 0, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),monolith,4,False,multiple,optimal,,1,10.0,"status multiple, expected optimal; objective 0, expected 32; the chosen set of features is not the optimal one"
+C2,Release planning (optimization),monolith,5,False,multiple,optimal,,1,10.0,"status multiple, expected optimal; objective 0, expected 32; the chosen set of features is not the optimal one"
+C3,Round table,hybrid,1,False,multiple,unique,67,4,134.6,"status multiple, expected unique"
+C3,Round table,hybrid,2,False,none,unique,0,3,79.4,"status none, expected unique"
+C3,Round table,hybrid,3,False,none,unique,0,3,82.1,"status none, expected unique"
+C3,Round table,hybrid,4,False,none,unique,0,3,82.3,"status none, expected unique"
+C3,Round table,hybrid,5,False,none,unique,0,3,79.3,"status none, expected unique"
+C3,Round table,monolith,1,False,unique,unique,67,1,33.4,solution differs (67% of values correct)
+C3,Round table,monolith,2,False,unique,unique,67,1,24.1,solution differs (67% of values correct)
+C3,Round table,monolith,3,False,unique,unique,67,1,24.1,solution differs (67% of values correct)
+C3,Round table,monolith,4,False,unique,unique,67,1,24.1,solution differs (67% of values correct)
+C3,Round table,monolith,5,False,unique,unique,67,1,24.1,solution differs (67% of values correct)
+C4,Days off,hybrid,1,False,multiple,unique,100,3,51.3,"status multiple, expected unique"
+C4,Days off,hybrid,2,False,multiple,unique,60,3,40.5,"status multiple, expected unique"
+C4,Days off,hybrid,3,False,multiple,unique,60,3,34.5,"status multiple, expected unique"
+C4,Days off,hybrid,4,False,multiple,unique,60,3,35.5,"status multiple, expected unique"
+C4,Days off,hybrid,5,False,multiple,unique,60,3,46.1,"status multiple, expected unique"
+C4,Days off,monolith,1,True,unique,unique,100,1,23.5,
+C4,Days off,monolith,2,False,unique,unique,60,1,13.0,solution differs (60% of values correct)
+C4,Days off,monolith,3,False,unique,unique,60,1,13.0,solution differs (60% of values correct)
+C4,Days off,monolith,4,False,unique,unique,60,1,13.0,solution differs (60% of values correct)
+C4,Days off,monolith,5,False,unique,unique,60,1,13.0,solution differs (60% of values correct)
+C5,Parcel delivery,hybrid,1,True,unique,unique,100,2,19.7,
+C5,Parcel delivery,hybrid,2,True,unique,unique,100,2,11.5,
+C5,Parcel delivery,hybrid,3,True,unique,unique,100,2,11.5,
+C5,Parcel delivery,hybrid,4,True,unique,unique,100,2,11.5,
+C5,Parcel delivery,hybrid,5,True,unique,unique,100,2,11.5,
+C5,Parcel delivery,monolith,1,True,unique,unique,100,1,16.5,
+C5,Parcel delivery,monolith,2,False,multiple,unique,33,1,10.2,"status multiple, expected unique"
+C5,Parcel delivery,monolith,3,False,multiple,unique,33,1,10.2,"status multiple, expected unique"
+C5,Parcel delivery,monolith,4,False,multiple,unique,33,1,10.2,"status multiple, expected unique"
+C5,Parcel delivery,monolith,5,False,multiple,unique,33,1,10.2,"status multiple, expected unique"

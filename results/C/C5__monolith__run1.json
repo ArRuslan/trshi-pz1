@@ -1,0 +1,22 @@
+{
+ "problem": "C5",
+ "pipeline": "monolith",
+ "run": 1,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:29:25",
+ "answer": {
+  "status": "unique",
+  "solution": {
+   "Liubov": "10:00",
+   "Mykola": "9:00",
+   "Nazar": "11:00"
+  },
+  "objective": null
+ },
+ "trace": {
+  "reasoning": "Given the conditions, we can deduce the following about the parcel deliveries at 9:00, 10:00, and 11:00. Let's analyze the conditions step by step and check the candidate solutions against them. Condition 1 states that Mykola's parcel arrived earlier than Liubov's. Condition 2 states that Nazar's parcel did not arrive at 9:00. Condition 3 states that Liubov's parcel did not arrive last. Let's consider the possible scenarios and check them against these conditions."
+ },
+ "error": null,
+ "seconds": 16.5,
+ "llm_calls": 1
+}

@@ -1,0 +1,64 @@
+{
+ "problem": "C5",
+ "pipeline": "hybrid",
+ "run": 4,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:58:29",
+ "answer": {
+  "status": "unique",
+  "solution": {
+   "Liubov": "10:00",
+   "Mykola": "9:00",
+   "Nazar": "11:00"
+  },
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Liubov": [
+       9,
+       11
+      ],
+      "Mykola": [
+       9,
+       11
+      ],
+      "Nazar": [
+       9,
+       11
+      ]
+     },
+     "all_different": [
+      [
+       "Nazar",
+       "Mykola",
+       "Liubov"
+      ]
+     ],
+     "constraints": [
+      "Mykola < Liubov",
+      "Nazar != 9",
+      "Liubov != 11"
+     ]
+    },
+    "errors": []
+   }
+  ],
+  "solver": {
+   "status": "unique",
+   "n_solutions": 1,
+   "objective": null,
+   "first_solution": {
+    "Liubov": 10,
+    "Mykola": 9,
+    "Nazar": 11
+   }
+  }
+ },
+ "error": null,
+ "seconds": 11.5,
+ "llm_calls": 2
+}

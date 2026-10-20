@@ -1,0 +1,223 @@
+{
+ "problem": "C3",
+ "pipeline": "hybrid",
+ "run": 1,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:46:40",
+ "answer": {
+  "status": "multiple",
+  "solution": {
+   "Iryna": 1,
+   "Orest": 6,
+   "Kostiantyn": 5,
+   "Liudmyla": 3,
+   "Mykhailo": 4,
+   "Nataliia": 2
+  },
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Kostiantyn": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Liudmyla": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Mykhailo": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "Nataliia": [
+       0,
+       1,
+       2,
+       3,
+       4,
+       5
+      ]
+     },
+     "all_different": [],
+     "constraints": [
+      "Orest != 1",
+      "Kostiantyn == 3",
+      "Liudmyla != 1",
+      "Mykhailo != 1",
+      "Nataliia == 5",
+      "Orest != 2",
+      "(abs(Orest - 1) == 1) + (abs(Orest - 3) == 1) <= 1",
+      "(abs(Kostiantyn - 1) == 1) + (abs(Kostiantyn - 3) == 1) <= 1",
+      "(abs(Liudmyla - 1) == 1) + (abs(Liudmyla - 3) == 1) <= 1",
+      "(abs(Mykhailo - 1) == 1) + (abs(Mykhailo - 3) == 1) <= 1",
+      "(abs(Nataliia - 5) == 1) + (abs(Nataliia - 1) == 1) <= 1"
+     ]
+    },
+    "errors": [
+     "Variable \"Orest\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Kostiantyn\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Liudmyla\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Mykhailo\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]",
+     "Variable \"Nataliia\" has invalid domain: [0, 1, 2, 3, 4, 5], must be an array of two numbers in format [low, high]"
+    ]
+   },
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       1,
+       6
+      ],
+      "Kostiantyn": [
+       1,
+       6
+      ],
+      "Liudmyla": [
+       1,
+       6
+      ],
+      "Mykhailo": [
+       1,
+       6
+      ],
+      "Nataliia": [
+       1,
+       6
+      ]
+     },
+     "all_different": [
+      [
+       "Nataliia",
+       "Kostiantyn",
+       "Orest",
+       "Mykhailo",
+       "Liudmyla"
+      ]
+     ],
+     "constraints": [
+      "1 == 1",
+      "(abs(Orest - 1) == 1) + (abs(Orest - 6) == 1) <= 1",
+      "3 == 3",
+      "(abs(Kostiantyn - 1) == 1) + (abs(Kostiantyn - 3) == 1) <= 1",
+      "(abs(Liudmyla - 1) == 1) + (abs(Liudmyla - 3) == 1) <= 1",
+      "(abs(Mykhailo - 1) == 1) + (abs(Mykhailo - 3) == 1) <= 1",
+      "(abs(Nataliia - 5) == 1) + (abs(Nataliia - 1) == 1) <= 1",
+      "Orest != 1",
+      "Kostiantyn != 1",
+      "Liudmyla != 1",
+      "Mykhailo != 1",
+      "Nataliia != 1",
+      "Orest != 2"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "Iryna": [
+       1,
+       1
+      ],
+      "Orest": [
+       1,
+       6
+      ],
+      "Kostiantyn": [
+       1,
+       6
+      ],
+      "Liudmyla": [
+       1,
+       6
+      ],
+      "Mykhailo": [
+       1,
+       6
+      ],
+      "Nataliia": [
+       1,
+       6
+      ]
+     },
+     "all_different": [
+      [
+       "Nataliia",
+       "Kostiantyn",
+       "Orest",
+       "Mykhailo",
+       "Liudmyla"
+      ]
+     ],
+     "constraints": [
+      "(abs(Orest - 1) == 1) + (abs(Orest - 6) == 1) <= 1",
+      "3 == 3",
+      "(abs(Kostiantyn - 1) == 1) + (abs(Kostiantyn - 3) == 1) <= 1",
+      "(abs(Liudmyla - 1) == 1) + (abs(Liudmyla - 3) == 1) <= 1",
+      "(abs(Mykhailo - 1) == 1) + (abs(Mykhailo - 3) == 1) <= 1",
+      "(abs(Nataliia - 5) == 1) + (abs(Nataliia - 1) == 1) <= 1",
+      "Orest != 1",
+      "Orest != 2",
+      "Kostiantyn != 1",
+      "Kostiantyn != 3",
+      "Liudmyla != 1",
+      "Liudmyla != 3",
+      "Mykhailo != 1",
+      "Mykhailo != 3",
+      "Nataliia != 1",
+      "Nataliia != 2"
+     ]
+    },
+    "errors": []
+   }
+  ],
+  "solver": {
+   "status": "multiple",
+   "n_solutions": 2,
+   "objective": null,
+   "first_solution": {
+    "Iryna": 1,
+    "Orest": 6,
+    "Kostiantyn": 5,
+    "Liudmyla": 3,
+    "Mykhailo": 4,
+    "Nataliia": 2
+   }
+  }
+ },
+ "error": null,
+ "seconds": 134.6,
+ "llm_calls": 4
+}

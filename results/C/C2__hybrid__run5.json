@@ -1,0 +1,240 @@
+{
+ "problem": "C2",
+ "pipeline": "hybrid",
+ "run": 5,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:44:50",
+ "answer": {
+  "status": "multiple",
+  "solution": {
+   "build": [
+    "SSO",
+    "Audit_log",
+    "2FA",
+    "Full_text_search"
+   ]
+  },
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "SSO": [
+       0,
+       1
+      ],
+      "Audit_log": [
+       0,
+       1
+      ],
+      "_2FA": [
+       0,
+       1
+      ],
+      "Dark_mode": [
+       0,
+       1
+      ],
+      "Offline_mode": [
+       0,
+       1
+      ],
+      "Real_time_sync": [
+       0,
+       1
+      ],
+      "CSV_export": [
+       0,
+       1
+      ],
+      "Public_API": [
+       0,
+       1
+      ],
+      "Rate_limiting": [
+       0,
+       1
+      ],
+      "Full_text_search": [
+       0,
+       1
+      ]
+     },
+     "all_different": [
+      [
+       "Public_API",
+       "Dark_mode",
+       "Real_time_sync",
+       "Audit_log",
+       "CSV_export",
+       "Rate_limiting",
+       "Full_text_search",
+       "Offline_mode",
+       "_2FA",
+       "SSO"
+      ]
+     ],
+     "constraints": [
+      "5*SSO + 3*Audit_log + 4*_2FA + 2*Dark_mode + 6*Offline_mode + 5*Real_time_sync + 2*CSV_export + 7*Public_API + 3*Rate_limiting + 4*Full_text_search <= 20",
+      "SSO + _2FA + Offline_mode + Real_time_sync + Public_API + Rate_limiting <= 5",
+      "_2FA <= SSO",
+      "(Offline_mode == 1) + (Real_time_sync == 1) <= 1",
+      "(Public_API == 1) + (Rate_limiting == 1) <= 1",
+      "(SSO == 1) + (_2FA == 1) + (Full_text_search == 1) >= 2"
+     ],
+     "objective": {
+      "maximize": "8*SSO + 4*Audit_log + 7*_2FA + 3*Dark_mode + 9*Offline_mode + 8*Real_time_sync + 2*CSV_export + 11*Public_API + 3*Rate_limiting + 6*Full_text_search"
+     }
+    },
+    "errors": [
+     "Impossible all_different group ['Public_API', 'Dark_mode', 'Real_time_sync', 'Audit_log', 'CSV_export', 'Rate_limiting', 'Full_text_search', 'Offline_mode', '_2FA', 'SSO']: 10 variables have only 2 possible values"
+    ]
+   },
+   {
+    "ir": {
+     "variables": {
+      "SSO": [
+       0,
+       1
+      ],
+      "Audit_log": [
+       0,
+       1
+      ],
+      "_2FA": [
+       0,
+       1
+      ],
+      "Dark_mode": [
+       0,
+       1
+      ],
+      "Offline_mode": [
+       0,
+       1
+      ],
+      "Real_time_sync": [
+       0,
+       1
+      ],
+      "CSV_export": [
+       0,
+       1
+      ],
+      "Public_API": [
+       0,
+       1
+      ],
+      "Rate_limiting": [
+       0,
+       1
+      ],
+      "Full_text_search": [
+       0,
+       1
+      ]
+     },
+     "all_different": [],
+     "constraints": [
+      "5*SSO + 3*Audit_log + 4*_2FA + 2*Dark_mode + 6*Offline_mode + 5*Real_time_sync + 2*CSV_export + 7*Public_API + 3*Rate_limiting + 4*Full_text_search <= 20",
+      "SSO + _2FA + Offline_mode + Real_time_sync + Public_API + Rate_limiting <= 5",
+      "_2FA <= SSO",
+      "(Offline_mode == 1) + (Real_time_sync == 1) <= 1",
+      "(Public_API == 1) + (Rate_limiting == 1) <= 1",
+      "(SSO == 1) + (_2FA == 1) + (Full_text_search == 1) >= 2"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "SSO": [
+       0,
+       1
+      ],
+      "Audit_log": [
+       0,
+       1
+      ],
+      "_2FA": [
+       0,
+       1
+      ],
+      "Dark_mode": [
+       0,
+       1
+      ],
+      "Offline_mode": [
+       0,
+       1
+      ],
+      "Real_time_sync": [
+       0,
+       1
+      ],
+      "CSV_export": [
+       0,
+       1
+      ],
+      "Public_API": [
+       0,
+       1
+      ],
+      "Rate_limiting": [
+       0,
+       1
+      ],
+      "Full_text_search": [
+       0,
+       1
+      ]
+     },
+     "all_different": [
+      [
+       "Full_text_search",
+       "_2FA",
+       "SSO"
+      ]
+     ],
+     "constraints": [
+      "5*SSO + 3*Audit_log + 4*_2FA + 2*Dark_mode + 6*Offline_mode + 5*Real_time_sync + 2*CSV_export + 7*Public_API + 3*Rate_limiting + 4*Full_text_search <= 20",
+      "SSO + _2FA + Offline_mode + Real_time_sync + Public_API + Rate_limiting <= 5",
+      "_2FA <= SSO",
+      "(Offline_mode == 1) + (Real_time_sync == 1) <= 1",
+      "(Public_API == 1) + (Rate_limiting == 1) <= 1",
+      "(SSO == 1) + (_2FA == 1) + (Full_text_search == 1) >= 2"
+     ],
+     "objective": {
+      "maximize": "8*SSO + 4*Audit_log + 7*_2FA + 3*Dark_mode + 9*Offline_mode + 8*Real_time_sync + 2*CSV_export + 11*Public_API + 3*Rate_limiting + 6*Full_text_search"
+     }
+    },
+    "errors": [
+     "Impossible all_different group ['Full_text_search', '_2FA', 'SSO']: 3 variables have only 2 possible values"
+    ]
+   }
+  ],
+  "solver": {
+   "status": "multiple",
+   "n_solutions": 2,
+   "objective": null,
+   "first_solution": {
+    "SSO": 1,
+    "Audit_log": 0,
+    "_2FA": 1,
+    "Dark_mode": 0,
+    "Offline_mode": 0,
+    "Real_time_sync": 0,
+    "CSV_export": 0,
+    "Public_API": 0,
+    "Rate_limiting": 1,
+    "Full_text_search": 1
+   }
+  }
+ },
+ "error": null,
+ "seconds": 110.5,
+ "llm_calls": 4
+}

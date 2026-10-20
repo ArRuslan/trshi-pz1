@@ -1,0 +1,122 @@
+{
+ "problem": "C4",
+ "pipeline": "hybrid",
+ "run": 4,
+ "model": "qwen2.5:3b",
+ "timestamp": "2026-10-20T13:56:24",
+ "answer": {
+  "status": "multiple",
+  "solution": {
+   "Andrii": "Tuesday",
+   "Bohdana": "Monday",
+   "Vasyl": "Friday",
+   "Hanna": "Thursday",
+   "Denys": "Wednesday"
+  },
+  "objective": null
+ },
+ "trace": {
+  "attempts": [
+   {
+    "ir": {
+     "variables": {
+      "Andrii": [
+       1,
+       5
+      ],
+      "Bohdana": [
+       1,
+       5
+      ],
+      "Vasyl": [
+       1,
+       5
+      ],
+      "Hanna": [
+       1,
+       5
+      ],
+      "Denys": [
+       1,
+       5
+      ]
+     },
+     "all_different": [
+      [
+       "Hanna",
+       "Andrii",
+       "Bohdana",
+       "Denys",
+       "Vasyl"
+      ]
+     ],
+     "constraints": [
+      "Vasyl == 5",
+      "(Hanna == 3) + (Vasyl == 5) <= 1",
+      "Andrii == Bohdana + 1",
+      "Denys != 1"
+     ]
+    },
+    "errors": []
+   },
+   {
+    "ir": {
+     "variables": {
+      "Andrii": [
+       1,
+       5
+      ],
+      "Bohdana": [
+       1,
+       5
+      ],
+      "Vasyl": [
+       1,
+       5
+      ],
+      "Hanna": [
+       1,
+       5
+      ],
+      "Denys": [
+       1,
+       5
+      ]
+     },
+     "all_different": [
+      [
+       "Hanna",
+       "Andrii",
+       "Bohdana",
+       "Denys",
+       "Vasyl"
+      ]
+     ],
+     "constraints": [
+      "(Vasyl == 5) + (Hanna == 3) <= 1",
+      "(Hanna == 3) + (Vasyl == 5) <= 1",
+      "Andrii == Bohdana + 1",
+      "Denys != 1",
+      "Vasyl == (Bohdana + 1) + 1"
+     ]
+    },
+    "errors": []
+   }
+  ],
+  "solver": {
+   "status": "multiple",
+   "n_solutions": 2,
+   "objective": null,
+   "first_solution": {
+    "Andrii": 2,
+    "Bohdana": 1,
+    "Vasyl": 5,
+    "Hanna": 4,
+    "Denys": 3
+   }
+  }
+ },
+ "error": null,
+ "seconds": 35.5,
+ "llm_calls": 3
+}
