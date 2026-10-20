@@ -426,7 +426,7 @@ def _repair_all_different(ir: dict) -> None:
     groups = ir.get("all_different")
     if not isinstance(groups, list):
         return
-    ir["all_different"] = list(filter(lambda g: len(g) >= 2, map(set, groups)))
+    ir["all_different"] = list(filter(lambda g: len(g) >= 2, map(list, map(set, groups))))
 
 
 def validate_ir(ir: dict) -> list:
